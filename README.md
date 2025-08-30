@@ -1,5 +1,5 @@
 
-# CPNR_OMEG_colab_low_energy_optical: Geant4 기반 광학 시뮬레이션
+# CPNR_OMEG_colab_low_energy_optical: Geant4 기반 광학 시뮬레이션 (디버깅 중)
 
 ## 1. 프로젝트 개요 (Overview)
 
