@@ -7,6 +7,7 @@
 #include "G4SDManager.hh"
 #include "G4MaterialPropertiesTable.hh"
 #include "G4ios.hh"
+#include "Randomize.hh"
 
 PMTSD::PMTSD(const G4String& name)
 : G4VSensitiveDetector(name), fHitsCollection(nullptr)
