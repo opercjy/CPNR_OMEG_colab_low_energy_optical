@@ -51,7 +51,7 @@ private:
   // --- 기타 멤버 변수 ---
   DetectorMessenger* fDetectorMessenger;
 
-  // ❗❗❗ 수정: 다른 함수에서 SD를 부착할 수 있도록 논리 볼륨 포인터를 멤버 변수로 선언
+  // 다른 함수에서 SD를 부착할 수 있도록 논리 볼륨 포인터를 멤버 변수로 선언
   G4LogicalVolume* logicLS;
   G4LogicalVolume* logicPhotocathode;
 };
