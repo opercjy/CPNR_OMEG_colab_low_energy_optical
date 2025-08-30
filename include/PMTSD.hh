@@ -4,6 +4,9 @@
 #include "G4VSensitiveDetector.hh"
 #include "PMTHit.hh"
 
+class G4Step;
+class G4HCofThisEvent;
+
 /**
  * @class PMTSD
  * @brief PMT의 광음극(photocathode) 역할을 하는 Sensitive Detector 입니다.
