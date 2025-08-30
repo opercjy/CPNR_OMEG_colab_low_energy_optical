@@ -3,7 +3,7 @@
 
 ## 1. 프로젝트 개요 (Overview)
 
-본 프로젝트는 `CPNR-OMEG-colab`의 후속 프로젝트로, ⁶⁰Co 선원에서 발생하는 방사선을 액체섬광체(LS)와 두 개의 광전증배관(PMT)으로 측정하는 **저에너지 광학 시뮬레이션**입니다. Geant4의 광학 물리(Optical Physics) 프로세스를 적용하여 섬광(Scintillation) 현상을 정밀하게 모사하고, PMT의 위치와 각도를 변경하며 각도 의존성(Angular Dependence)을 분석하는 것을 목표로 합니다.
+본 프로젝트는 `CPNR-OMEG-colab`의 후속 프로젝트로, ⁶⁰Co 선원에서 발생하는 방사선을 2개의 액체섬광체(LS)와 광전증배관(PMT)으로 측정하는 **저에너지 광학 시뮬레이션**입니다. Geant4의 광학 물리(Optical Physics) 프로세스를 적용하여 섬광(Scintillation) 현상을 정밀하게 모사하고, PMT의 위치와 각도를 변경하며 각도 의존성(Angular Dependence)을 분석하는 것을 목표로 합니다.
 
 ### 주요 특징 (Key Features)
 
