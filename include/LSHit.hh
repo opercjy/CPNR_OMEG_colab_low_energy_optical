@@ -23,7 +23,30 @@ public:
   // Setters and Getters
   void SetTrackID(G4int id) { fTrackID = id; }
   G4int GetTrackID() const { return fTrackID; }
-  // ... (다른 모든 Setters/Getters)
+
+  void SetParentID(G4int id) { fParentID = id; }
+  G4int GetParentID() const { return fParentID; }
+
+  void SetParticleName(const G4String& name) { fParticleName = name; }
+  const G4String& GetParticleName() const { return fParticleName; }
+  
+  void SetProcessName(const G4String& name) { fProcessName = name; }
+  const G4String& GetProcessName() const { return fProcessName; }
+
+  void SetVolumeName(const G4String& name) { fVolumeName = name; }
+  const G4String& GetVolumeName() const { return fVolumeName; }
+
+  void SetPosition(const G4ThreeVector& pos) { fPosition = pos; }
+  const G4ThreeVector& GetPosition() const { return fPosition; }
+  
+  void SetTime(G4double t) { fTime = t; }
+  G4double GetTime() const { return fTime; }
+
+  void SetKineticEnergy(G4double e) { fKineticEnergy = e; }
+  G4double GetKineticEnergy() const { return fKineticEnergy; }
+
+  void SetEnergyDeposit(G4double edep) { fEnergyDeposit = edep; }
+  G4double GetEnergyDeposit() const { return fEnergyDeposit; }
 
 private:
   G4int         fTrackID;
@@ -39,5 +62,16 @@ private:
 
 typedef G4THitsCollection<LSHit> LSHitsCollection;
 extern G4ThreadLocal G4Allocator<LSHit>* LSHitAllocator;
-// ... (new/delete 구현은 이전 답변과 동일)
+
+inline void* LSHit::operator new(size_t)
+{
+  if (!LSHitAllocator) LSHitAllocator = new G4Allocator<LSHit>;
+  return (void*)LSHitAllocator->MallocSingle();
+}
+
+inline void LSHit::operator delete(void* aHit)
+{
+  LSHitAllocator->FreeSingle((LSHit*)aHit);
+}
+
 #endif
