@@ -4,6 +4,9 @@
 #include "G4VSensitiveDetector.hh"
 #include "LSHit.hh"
 
+class G4Step;
+class G4HCofThisEvent;
+
 /**
  * @class LSSD
  * @brief LS와 PMT 윈도우의 에너지 증착을 감지하는 Sensitive Detector 클래스입니다.
