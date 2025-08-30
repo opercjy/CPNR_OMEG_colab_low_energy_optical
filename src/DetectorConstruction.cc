@@ -249,7 +249,8 @@ void DetectorConstruction::DefineMaterials()
   lsMPT->AddConstProperty("SCINTILLATIONYIELD", 10000./MeV);
   lsMPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1", 10.*ns);
   lsMPT->AddConstProperty("RESOLUTIONSCALE", 1.0);
-  lsMPT->AddConstProperty("BIRKSCONSTANT", 0.126*mm/MeV);
+  //lsMPT->AddConstProperty("BIRKSCONSTANT", 0.126*mm/MeV);
+  lsMPT->AddConstProperty("BIRKSCONSTANT", 0.07943*mm/MeV);
   fLsMaterial->SetMaterialPropertiesTable(lsMPT);
 }
 
