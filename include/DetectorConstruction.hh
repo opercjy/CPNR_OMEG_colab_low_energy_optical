@@ -31,7 +31,8 @@ public:
 
 private:
   void DefineMaterials();
-  G4LogicalVolume* ConstructPMT(); // PMT 1개를 생성하는 헬퍼 함수
+  //검출기 유닛 전체를 생성하는 헬퍼 함수로 변경
+  G4LogicalVolume* ConstructDetectorUnit();
 
   // --- 물질 포인터 ---
   G4Material* fAirMaterial;
