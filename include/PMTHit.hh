@@ -31,5 +31,16 @@ private:
 
 typedef G4THitsCollection<PMTHit> PMTHitsCollection;
 extern G4ThreadLocal G4Allocator<PMTHit>* PMTHitAllocator;
-// ... (new/delete 구현은 이전 답변과 동일)
+
+inline void* PMTHit::operator new(size_t)
+{
+  if (!PMTHitAllocator) PMTHitAllocator = new G4Allocator<PMTHit>;
+  return (void*)PMTHitAllocator->MallocSingle();
+}
+
+inline void PMTHit::operator delete(void* aHit)
+{
+  PMTHitAllocator->FreeSingle((PMTHit*)aHit);
+}
+
 #endif
