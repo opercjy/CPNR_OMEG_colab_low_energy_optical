@@ -250,7 +250,17 @@ void DetectorConstruction::DefineMaterials()
   lsMPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1", 10.*ns);
   lsMPT->AddConstProperty("RESOLUTIONSCALE", 1.0);
   //lsMPT->AddConstProperty("BIRKSCONSTANT", 0.126*mm/MeV);
-  lsMPT->AddConstProperty("BIRKSCONSTANT", 0.07943*mm/MeV);
+
+  // Geant4 v11.3.2 호환성을 위한 Birks 상수 구현
+  // "BIRKSCONSTANT"를 새로운 속성 키로 명시적으로 생성(createNewKey=true)합니다.
+  const G4int NUMENTRIES_BIRKS = 1;
+  // 상수 속성이므로 에너지 값은 중요하지 않으나 형식상 필요합니다.
+  G4double birks_energies[NUMENTRIES_BIRKS] = { 1.0*eV }; 
+  // JUNO 실험 기반의 정확한 Birks 상수 값을 사용합니다.
+  G4double birks_constant[NUMENTRIES_BIRKS] = { 0.07943*mm/MeV };
+  // AddProperty(key, energies, values, num_entries, createNewKey)
+  lsMPT->AddProperty("BIRKSCONSTANT", birks_energies, birks_constant, NUMENTRIES_BIRKS, true); // [!+]
+  
   fLsMaterial->SetMaterialPropertiesTable(lsMPT);
 }
 
