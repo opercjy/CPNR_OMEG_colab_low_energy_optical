@@ -31,7 +31,7 @@
 
 /**
  * @class DetectorMessenger
- * @brief DetectorConstruction의 멤버 변수를 매크로 UI 명령어로 제어하는 헬퍼 클래스.
+ * @brief [수정] 각도와 거리를 모두 제어하는 Messenger 클래스
  */
 class DetectorMessenger : public G4UImessenger
 {
@@ -46,18 +46,27 @@ public:
     fSetAngleCmd->SetParameterName("Angle", false);
     fSetAngleCmd->SetUnitCategory("Angle");
     fSetAngleCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+
+    // [!+] 거리 제어 명령어 추가
+    fSetDistanceCmd = new G4UIcmdWithADoubleAndUnit("/myApp/detector/setDistance", this);
+    fSetDistanceCmd->SetGuidance("Set the distance between the source and detectors.");
+    fSetDistanceCmd->SetParameterName("Distance", false);
+    fSetDistanceCmd->SetUnitCategory("Length");
+    fSetDistanceCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
   }
 
   virtual ~DetectorMessenger()
   {
     delete fSetAngleCmd;
-    delete fDirectory;
+    delete fSetDistanceCmd;
   }
 
   virtual void SetNewValue(G4UIcommand* command, G4String newValue) override
   {
     if (command == fSetAngleCmd) {
       fDetector->SetMovablePMTAngle(fSetAngleCmd->GetNewDoubleValue(newValue));
+    } else if (command == fSetDistanceCmd) { // [!+] 거리 명령어 처리 로직
+      fDetector->SetDetectorDistance(fSetDistanceCmd->GetNewDoubleValue(newValue));
     }
   }
 
@@ -65,6 +74,7 @@ private:
   DetectorConstruction* fDetector;
   G4UIdirectory* fDirectory;
   G4UIcmdWithADoubleAndUnit* fSetAngleCmd;
+  G4UIcmdWithADoubleAndUnit* fSetDistanceCmd; // [!+] 거리 명령어 포인터
 };
 
 
@@ -73,6 +83,7 @@ private:
 DetectorConstruction::DetectorConstruction()
  : G4VUserDetectorConstruction(),
    fMovablePMTAngle(90.0*deg),
+   fDetectorDistance(20.0*cm), // [!+] 거리 변수 초기화
    logicLS(nullptr), logicPhotocathode(nullptr)
 {
   fDetectorMessenger = new DetectorMessenger(this);
@@ -89,6 +100,13 @@ void DetectorConstruction::SetMovablePMTAngle(G4double angle)
   G4RunManager::GetRunManager()->GeometryHasBeenModified();
 }
 
+// [!+] 거리 설정 함수 구현
+void DetectorConstruction::SetDetectorDistance(G4double distance)
+{
+  fDetectorDistance = distance;
+  G4RunManager::GetRunManager()->GeometryHasBeenModified();
+}
+
 G4VPhysicalVolume* DetectorConstruction::Construct()
 {
   DefineMaterials();
@@ -97,41 +115,60 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   auto solidWorld = new G4Box("SolidWorld", 0.5*m, 0.5*m, 0.5*m);
   auto logicWorld = new G4LogicalVolume(solidWorld, fAirMaterial, "LogicWorld");
   auto physWorld = new G4PVPlacement(nullptr, G4ThreeVector(), logicWorld, "PhysWorld", nullptr, false, 0, true);
-  logicWorld->SetVisAttributes(new G4VisAttributes(false));
+  logicWorld->SetVisAttributes(G4VisAttributes::GetInvisible()); // [!+] 월드는 투명하게
 
-  // --- 선원 (Source) at (0,0,0) ---
-  auto solidSource = new G4Sphere("SolidSource", 0, 1.0*mm, 0, 360*deg, 0, 180*deg);
+  // 에폭시 디스크 (부모 볼륨)
+  auto solidEpoxy = new G4Tubs("SolidEpoxy", 0., 12.5*mm, 1.5*mm, 0., 360.*deg);
+  auto logicEpoxy = new G4LogicalVolume(solidEpoxy, fEpoxyMaterial, "LogicEpoxy");
+  logicEpoxy->SetVisAttributes(new G4VisAttributes(G4Colour(0.8, 0.8, 0.8, 0.3))); // 반투명 회색
+
+  // Co-60 활성화 디스크 (실제 선원)
+  auto solidSource = new G4Tubs("SolidSource", 0., 2.5*mm, 0.5*mm, 0., 360.*deg);
   auto logicSource = new G4LogicalVolume(solidSource, fCo60Material, "LogicSource");
-  new G4PVPlacement(nullptr, G4ThreeVector(), logicSource, "PhysSource", logicWorld, false, 0, true);
   logicSource->SetVisAttributes(new G4VisAttributes(G4Colour::Blue()));
+
+  // 에폭시 디스크 내부에 Co-60 디스크 배치
+  new G4PVPlacement(nullptr, G4ThreeVector(), logicSource, "PhysSource", logicEpoxy, false, 0, true);
+
+  // 선원 디스크가 고정 검출기(X축 방향)를 바라보도록 회전
+  auto source_rot = new G4RotationMatrix();
+  source_rot->rotateY(90. * deg);
+  new G4PVPlacement(source_rot, G4ThreeVector(), logicEpoxy, "PhysEpoxy", logicWorld, false, 0, true);
 
   // --- 단일 검출기 유닛 생성 ---
   G4LogicalVolume* logicDetectorUnit = ConstructDetectorUnit();
-  G4double R = 20.0 * cm;
+  G4double R = fDetectorDistance; // [!+] 거리 변수 사용
 
-  // --- 검출기 유닛 배치 ---
-  // 1. 고정된 검출기 유닛 (Fixed Detector Unit)
-  G4RotationMatrix* rot_fixed = new G4RotationMatrix();
+  // --- [수정] 검출기 배치 및 방향 설정 ---
+  // 검출기가 선원(원점)을 바라보게 할 기본 회전 (Y축으로 90도)
+  auto rot_face_source = new G4RotationMatrix();
+  rot_face_source->rotateY(90. * deg);
+
+  // 1. 고정된 검출기 유닛
   G4ThreeVector pos_fixed(R, 0, 0);
-  new G4PVPlacement(rot_fixed, pos_fixed, logicDetectorUnit, "PhysDetectorUnit_Fixed", logicWorld, false, 0, true);
+  new G4PVPlacement(rot_face_source, pos_fixed, logicDetectorUnit, "PhysDetectorUnit_Fixed", logicWorld, false, 0, true);
 
-  // 2. 회전하는 검출기 유닛 (Movable Detector Unit)
-  G4RotationMatrix* rot_movable = new G4RotationMatrix();
-  rot_movable->rotateZ(fMovablePMTAngle);
-  G4ThreeVector pos_movable = (*rot_movable) * G4ThreeVector(R,0,0);
-  new G4PVPlacement(rot_movable, pos_movable, logicDetectorUnit, "PhysDetectorUnit_Movable", logicWorld, false, 1, true);
+  // 2. 회전하는 검출기 유닛
+  auto rot_movable_placement = new G4RotationMatrix();
+  rot_movable_placement->rotateZ(fMovablePMTAngle);
+  G4ThreeVector pos_movable = (*rot_movable_placement) * G4ThreeVector(R, 0, 0);
+
+  // 최종 회전 = 배치 회전 * 선원 추적 회전
+  auto final_movable_rot = new G4RotationMatrix(*rot_movable_placement);
+  final_movable_rot->transform(*rot_face_source);
+  new G4PVPlacement(final_movable_rot, pos_movable, logicDetectorUnit, "PhysDetectorUnit_Movable", logicWorld, false, 1, true);
 
   return physWorld;
 }
 
 G4LogicalVolume* DetectorConstruction::ConstructDetectorUnit()
 {
-  // --- 검출기 유닛 어머니 볼륨 ---
+  // --- 검출기 유닛 부모 볼륨 ---
   G4double assemblyRadius = 60*mm;
   G4double assemblyHalfZ = 150*mm;
   auto solidAssembly = new G4Tubs("SolidAssembly", 0, assemblyRadius, assemblyHalfZ, 0, twopi);
   auto logicAssembly = new G4LogicalVolume(solidAssembly, fAirMaterial, "LogicAssembly");
-  logicAssembly->SetVisAttributes(new G4VisAttributes(false));
+  logicAssembly->SetVisAttributes(G4VisAttributes::GetInvisible()); // [!+] 부모 볼륨은 투명하게
 
   // --- 듀란 병, LS, 뚜껑 등 배치 ---
   G4double bottle_outer_radius = 28.0 * mm;
@@ -139,10 +176,12 @@ G4LogicalVolume* DetectorConstruction::ConstructDetectorUnit()
   G4double bottle_body_hz = 40.0 * mm;
   auto solidBottleBody = new G4Tubs("SolidBottleBody", bottle_inner_radius, bottle_outer_radius, bottle_body_hz, 0, twopi);
   auto logicBottleBody = new G4LogicalVolume(solidBottleBody, fGlassMaterial, "LogicBottleBody");
+  logicBottleBody->SetVisAttributes(new G4VisAttributes(G4Colour(0.0, 1.0, 1.0, 0.2))); // [!+] 반투명 청록색
   new G4PVPlacement(nullptr, G4ThreeVector(), logicBottleBody, "PhysBottleBody", logicAssembly, false, 0, true);
 
   auto solidLS = new G4Tubs("SolidLS", 0, bottle_inner_radius, bottle_body_hz, 0, twopi);
   logicLS = new G4LogicalVolume(solidLS, fLsMaterial, "LogicLS");
+  logicLS->SetVisAttributes(new G4VisAttributes(G4Colour(1.0, 1.0, 0.0, 0.3))); // [!+] 반투명 노란색
   new G4PVPlacement(nullptr, G4ThreeVector(), logicLS, "PhysLS", logicAssembly, false, 0, true);
 
   // --- 실리콘 및 PMT 배치 ---
@@ -163,18 +202,19 @@ G4LogicalVolume* DetectorConstruction::ConstructPMT()
 {
   auto solidPmtAssembly = new G4Tubs("SolidPmtAssembly", 0, 30.*mm, 107.5*mm, 0, twopi);
   auto logicPmtAssembly = new G4LogicalVolume(solidPmtAssembly, fVacuumMaterial, "LogicPmtAssembly");
-  logicPmtAssembly->SetVisAttributes(new G4VisAttributes(false));
+  logicPmtAssembly->SetVisAttributes(G4VisAttributes::GetInvisible());
 
   auto solidPmtBody = new G4Tubs("SolidPmtBody", 28*mm, 29.5*mm, 105*mm, 0, twopi);
   auto logicPmtBody = new G4LogicalVolume(solidPmtBody, fPmtBodyMaterial, "LogicPmtBody");
-  new G4PVPlacement(nullptr, G4ThreeVector(), logicPmtBody, "PhysPmtBody", logicPmtAssembly, false, 0, true);
+  logicPmtBody->SetVisAttributes(new G4VisAttributes(G4Colour(0.5, 0.5, 0.5, 0.8))); // [!+] 회색
 
   auto solidPmtWindow = new G4Tubs("SolidPmtWindow", 0, 26.5*mm, 2.5*mm, 0, twopi);
   auto logicPmtWindow = new G4LogicalVolume(solidPmtWindow, fGlassMaterial, "LogicPmtWindow");
-  new G4PVPlacement(nullptr, G4ThreeVector(0, 0, 105*mm), logicPmtWindow, "PhysPmtWindow", logicPmtAssembly, false, 0, true);
+  logicPmtWindow->SetVisAttributes(new G4VisAttributes(G4Colour(0.0, 1.0, 1.0, 0.1))); // [!+] 매우 투명한 청록색
 
   auto solidPhotocathode = new G4Tubs("SolidPhotocathode", 0, 26.5*mm, 0.05*mm, 0, twopi);
   logicPhotocathode = new G4LogicalVolume(solidPhotocathode, fPmtBodyMaterial, "LogicPhotocathode");
+  logicPhotocathode->SetVisAttributes(new G4VisAttributes(G4Colour::Red())); // [!+] 잘 보이도록 빨간색
   new G4PVPlacement(nullptr, G4ThreeVector(0, 0, 102.45*mm), logicPhotocathode, "PhysPhotocathode", logicPmtAssembly, false, 0, true);
 
   auto photocathode_opsurf = new G4OpticalSurface("Photocathode_OpSurface");
@@ -197,6 +237,8 @@ G4LogicalVolume* DetectorConstruction::ConstructPMT()
 void DetectorConstruction::DefineMaterials()
 {
   auto nist = G4NistManager::Instance();
+
+  fEpoxyMaterial = nist->FindOrBuildMaterial("G4_EPOXY");
 
   fAirMaterial = nist->FindOrBuildMaterial("G4_AIR");
   fVacuumMaterial = nist->FindOrBuildMaterial("G4_Galactic");
@@ -245,21 +287,16 @@ void DetectorConstruction::DefineMaterials()
   auto lsMPT = new G4MaterialPropertiesTable();
   lsMPT->AddProperty("RINDEX", photonEnergies, rindex_ls, NUMENTRIES_OPT);
   lsMPT->AddProperty("ABSLENGTH", photonEnergies, absorption_ls, NUMENTRIES_OPT);
-  auto scintProperty = lsMPT->AddProperty("SCINTILLATIONCOMPONENT1", photonEnergies, emission_ls, NUMENTRIES_OPT);
+  lsMPT->AddProperty("SCINTILLATIONCOMPONENT1", photonEnergies, emission_ls, NUMENTRIES_OPT);
   lsMPT->AddConstProperty("SCINTILLATIONYIELD", 10000./MeV);
   lsMPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1", 10.*ns);
   lsMPT->AddConstProperty("RESOLUTIONSCALE", 1.0);
-  //lsMPT->AddConstProperty("BIRKSCONSTANT", 0.126*mm/MeV);
-
+  
   // Geant4 v11.3.2 호환성을 위한 Birks 상수 구현
-  // "BIRKSCONSTANT"를 새로운 속성 키로 명시적으로 생성(createNewKey=true)합니다.
   const G4int NUMENTRIES_BIRKS = 1;
-  // 상수 속성이므로 에너지 값은 중요하지 않으나 형식상 필요합니다.
-  G4double birks_energies[NUMENTRIES_BIRKS] = { 1.0*eV }; 
-  // JUNO 실험 기반의 정확한 Birks 상수 값을 사용합니다.
+  G4double birks_energies[NUMENTRIES_BIRKS] = { 1.0*eV };
   G4double birks_constant[NUMENTRIES_BIRKS] = { 0.07943*mm/MeV };
-  // AddProperty(key, energies, values, num_entries, createNewKey)
-  lsMPT->AddProperty("BIRKSCONSTANT", birks_energies, birks_constant, NUMENTRIES_BIRKS, true); // [!+]
+  lsMPT->AddProperty("BIRKSCONSTANT", birks_energies, birks_constant, NUMENTRIES_BIRKS, true);
   
   fLsMaterial->SetMaterialPropertiesTable(lsMPT);
 }
