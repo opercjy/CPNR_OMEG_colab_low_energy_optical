@@ -227,7 +227,7 @@ python3 ../plot_coincidence.py
   * **방사성 붕괴 임계값**: Geant4 v11.2부터 반감기가 **1년 이상**인 핵종(Co-60 등)은 붕괴가 기본적으로 비활성화됩니다. `/run/initialize` 이후 `/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year` 명령어로 붕괴를 활성화해야 합니다.
   * **사용자 정의 명령어:** `G4UImessenger` 클래스를 구현하여, `/myApp/detector/setMovableAngle`과 같이 사용자가 직접 매크로 명령어를 만들고 C++ 코드의 변수를 제어할 수 있습니다.
   * **사용자 정의 물리 리스트:** `G4VModularPhysicsList`를 상속받아 필요한 물리 모듈만 조합하면, 표준 리스트 사용 시 발생하는 UI 명령어 비활성화 등의 문제를 피하고 시뮬레이션을 완벽하게 제어할 수 있습니다.
-  * **동적 지오메트리 제어:** `G4GenericMessenger`를 사용하여 C++ 코드의 변수(`fMovablePMTAngle` 등)를 매크로 명령어(`/myApp/detector/setMovableAngle`)와 직접 연결할 수 있다. `Setter` 함수 내에서 `G4RunManager::GetRunManager()->GeometryHasBeenModified()` [1]를 호출하는 것이 핵심이며, 이를 통해 `/run/beamOn` 명령어 사이에서 코드를 재컴파일하지 않고도 지오메트리를 동적으로 변경하고 시뮬레이션을 연속적으로 수행할 수 있다. 이는 파라미터 스캔 시뮬레이션의 효율을 극대화한다.
+  * **동적 지오메트리 제어:** `G4GenericMessenger`를 사용하여 C++ 코드의 변수(`fMovablePMTAngle` 등)를 매크로 명령어(`/myApp/detector/setMovableAngle`)와 직접 연결할 수 있다. `Setter` 함수 내에서 `G4RunManager::GetRunManager()->GeometryHasBeenModified()` 를 호출하는 것이 핵심이며, 이를 통해 `/run/beamOn` 명령어 사이에서 코드를 재컴파일하지 않고도 지오메트리를 동적으로 변경하고 시뮬레이션을 연속적으로 수행할 수 있다. 이는 파라미터 스캔 시뮬레이션의 효율을 극대화한다.
 
 
 <!-- end list -->
