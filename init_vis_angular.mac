@@ -1,5 +1,5 @@
 # =============================================================
-# init_vis_angular.mac (PMT 각도 제어 시각화용 최종본)
+# init_vis_angular.mac (PMT 각도/거리 제어 시각화용 최종본)
 # =============================================================
 
 # 1. 시각화 환경 설정
@@ -20,14 +20,17 @@
 /process/had/rdm/nucleusLimits 60 60 27 27
 
 # 4. Detector 제어 명령어 사용 예시
-#    이 값들을 직접 수정하고 /run/beamOn 1을 실행하여 변화를 관찰할 수 있습니다.
+#    이 값들을 직접 수정하고 /run/beamOn 1을 실행하여
+#    각도와 거리에 따른 변화를 관찰할 수 있습니다.
 /myApp/detector/setMovableAngle 90 deg
+/myApp/detector/setDistance 20 cm
 
-# 5. 입자총(Particle Gun) 설정
-/gun/particle ion
-/gun/ion 27 60 0 0
-/gun/energy 0. keV
-/gun/position 0 0 0
+# 5. GPS를 이용한 부피 선원 설정
+/gps/particle ion
+/gps/ion 27 60 0 0
+/gps/energy 0. keV
+/gps/source/confine LogicSource
+/gps/ang/type iso
 
 # 6. 시뮬레이션 실행 (광자가 많이 보이도록 10개 이벤트 실행)
 /run/beamOn 10
