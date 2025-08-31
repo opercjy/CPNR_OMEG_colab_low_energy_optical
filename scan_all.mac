@@ -1,0 +1,48 @@
+# ===================================================================
+# scan_all.mac
+#
+# 목적: Geant4의 /control/loop 명령어를 사용하여 거리와 각도에 대한
+#       2중 루프를 실행, 모든 파라미터 조합을 자동으로 스캔한다.
+#       이 방식은 외부 쉘 스크립트보다 훨씬 효율적이다.
+#
+# 실행 방법:./myApp scan_all.mac (배치 모드)
+# ===================================================================
+
+# --- 1. 공통 초기 설정 (전체 시뮬레이션에서 단 한 번만 실행) ---
+# 이 부분은 모든 런(Run)에 공통적으로 적용되는 설정이다.
+
+# 시각화 환경 설정 (GUI 모드에서 실행 시 유효)
+/vis/open OGL
+/vis/drawVolume
+/vis/viewer/set/viewpointThetaPhi 70 30
+/vis/viewer/zoom 1.2
+/tracking/storeTrajectory 1
+/vis/scene/add/trajectories
+/vis/scene/endOfEventAction accumulate
+
+# GPS(선원) 설정
+/gps/particle ion
+/gps/ion 27 60 0 0
+/gps/energy 0. keV
+/gps/source/confine LogicSource
+/gps/ang/type iso
+
+# 분석(결과 저장) 관련 설정
+# 파일 이름에 확장자(.root)를 포함하지 않는 것이 좋다. Geant4가 자동으로 추가한다.
+/analysis/setFileName results
+/analysis/setVerbose 1
+
+# --- 2. 파라미터 스캔을 위한 2중 루프 실행 ---
+
+# /control/loop [루프를 실행할 매크로 파일][변수명1][시작값][끝값][증가값]
+# /control/foreach [루프를 실행할 매크로 파일][변수명2][값 목록]
+
+# 외부 루프: 거리를 10, 20, 30 cm로 변경한다.
+# {distance} 변수에 10, 20, 30이 순서대로 할당된다.
+/control/foreach run_single.mac distance 10 20 30
+
+# [참고] 만약 10cm부터 50cm까지 10cm 간격으로 스캔하고 싶다면 아래와 같이 사용한다.
+# /control/loop run_single.mac distance 10 50 10
+
+/control/echo " "
+/control/echo "===== All simulations completed. ====="
