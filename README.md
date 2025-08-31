@@ -159,6 +159,7 @@ make -j$(nproc)
 ./CPNR_OMEG_colab_low_energy_optical
 ```
 <img width="1320" height="1020" alt="image" src="https://github.com/user-attachments/assets/184fce5d-0825-4880-9981-9fb102ea57f1" />
+<img width="1320" height="1020" alt="image" src="https://github.com/user-attachments/assets/1c476ba6-a9c7-4cf7-bee3-38e6a198d53d" />
 
 
 
