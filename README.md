@@ -158,8 +158,8 @@ make -j$(nproc)
 ```bash
 ./CPNR_OMEG_colab_low_energy_optical
 ```
-<img width="1320" height="1020" alt="image" src="https://github.com/user-attachments/assets/3c89d994-101b-40fe-8681-39d12d29973b" />
-<img width="1320" height="1020" alt="image" src="https://github.com/user-attachments/assets/55e90e84-6745-4977-803f-4559b95f1000" />
+<img width="1320" height="1020" alt="image" src="https://github.com/user-attachments/assets/184fce5d-0825-4880-9981-9fb102ea57f1" />
+
 
 
 #### 배치 모드 (데이터 생산 자동화)
