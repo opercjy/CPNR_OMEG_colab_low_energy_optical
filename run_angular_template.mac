@@ -14,9 +14,10 @@
 /process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year
 /process/had/rdm/nucleusLimits 60 60 27 27
 
-# 4. PMT 위치 및 각도 설정 (플레이스홀더)
+# 4. 검출기 위치/각도/거리 설정 (플레이스홀더)
 #    이 값들은 run_all.sh 스크립트에 의해 자동으로 변경됩니다.
 /myApp/detector/setMovableAngle ANGLE_PLACEHOLDER deg
+/myApp/detector/setDistance DISTANCE_PLACEHOLDER cm  
 
 # 5. 결과 파일 이름 설정 (플레이스홀더)
 /analysis/setFileName FILENAME_PLACEHOLDER.root
