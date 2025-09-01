@@ -18,6 +18,7 @@
 #include "G4SDManager.hh"
 #include "G4VisAttributes.hh"
 #include "G4Colour.hh"
+#include "G4UnitsTable.hh"
 
 // --- 사용자 정의 클래스 헤더 ---
 #include "PMTSD.hh"
